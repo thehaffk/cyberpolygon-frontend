@@ -2,27 +2,20 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Копируем файлы package.json и package-lock.json
 COPY ./cyberpolygon/package*.json ./
 
-# Устанавливаем зависимости
 RUN npm install
 
-# Копируем все файлы проекта
 COPY ./cyberpolygon .
 
-# Исправляем права доступа
 RUN chmod -R 755 node_modules/.bin
 
-# Устанавливаем переменные окружения
 ENV REACT_APP_API_URL=http://localhost:8000
 ENV REACT_APP_API_PATH=/cyberpolygon/api
 ENV REACT_APP_API_VERSION=/v1
 ENV REACT_APP_WS_PATH=/ws
 ENV BROWSER=none
 
-# Открываем порт для доступа к приложению
 EXPOSE 3000
 
-# Запускаем приложение
 CMD ["npm", "start"] 
