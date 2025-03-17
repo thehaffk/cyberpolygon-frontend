@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  frontend:
+    build:
+      context: ./cyberpolygon
+    ports:
+      - "3000:3000"
+    # Убираем тома для лучшей работы npm install
+    # volumes:
+    #   - ./cyberpolygon/src:/app/src
+    #   - ./cyberpolygon/public:/app/public
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_PATH=/cyberpolygon/api
+      - REACT_APP_API_VERSION=/v1
+      - REACT_APP_WS_PATH=/ws
+      - NODE_ENV=development
+      - BROWSER=none
+      - CHOKIDAR_USEPOLLING=true
+      - CI=true
+    restart: on-failure
+    stdin_open: true
+    tty: true 
