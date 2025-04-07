@@ -1,15 +1,18 @@
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-// Создаем инстанс axios с базовым URL
+const API_BASE_URL = 'http://localhost:8000';
+
+// Создаем экземпляр axios
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: API_BASE_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
-// Добавляем интерцептор для добавления токена авторизации
+// Добавляем интерцепторы
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -18,19 +21,13 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Интерцептор для обработки ошибок
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
-    // Если ошибка авторизации, перенаправляем на логин
-    if (error.response && error.response.status === 401) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }

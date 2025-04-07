@@ -1,7 +1,7 @@
 import axiosInstance from './axiosInstance';
 
 interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -12,17 +12,29 @@ interface RegisterData {
 }
 
 interface AuthResponse {
-  user: {
-    id: number;
-    username: string;
-    email: string;
-  };
   token: string;
+  id?: number;
+  username?: string;
+  email?: string;
+}
+
+interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  telegram_id?: string;
+  roles?: string[];
+  teams?: {
+    id: number;
+    name: string;
+    role: string;
+  }[];
+  bio?: string;
 }
 
 const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await axiosInstance.post('/api/auth/login/', credentials);
+    const response = await axiosInstance.post('/cyberpolygon/v1/auth/login/', credentials);
     const data = response.data;
     
     if (data.token) {
@@ -33,7 +45,7 @@ const authApi = {
   },
   
   register: async (userData: RegisterData): Promise<AuthResponse> => {
-    const response = await axiosInstance.post('/api/auth/register/', userData);
+    const response = await axiosInstance.post('/cyberpolygon/v1/auth/signup/', userData);
     const data = response.data;
     
     if (data.token) {
@@ -45,7 +57,7 @@ const authApi = {
   
   logout: async (): Promise<void> => {
     try {
-      await axiosInstance.post('/api/auth/logout/');
+      await axiosInstance.post('/cyberpolygon/v1/auth/logout/');
     } finally {
       localStorage.removeItem('token');
     }
@@ -55,13 +67,18 @@ const authApi = {
     return localStorage.getItem('token') !== null;
   },
   
-  getCurrentUser: async () => {
+  getCurrentUser: async (): Promise<UserProfile | null> => {
     try {
-      const response = await axiosInstance.get('/api/auth/user/');
+      const response = await axiosInstance.get('/cyberpolygon/v1/profile/');
       return response.data;
     } catch (error) {
       return null;
     }
+  },
+  
+  updateProfile: async (profileData: Partial<UserProfile>): Promise<UserProfile> => {
+    const response = await axiosInstance.patch('/cyberpolygon/v1/profile/', profileData);
+    return response.data;
   }
 };
 

@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = 'http://localhost:8000';
 
+// Создаем экземпляр axios
 const axiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -10,6 +11,7 @@ const axiosInstance = axios.create({
   },
 });
 
+// Добавляем интерцепторы
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');

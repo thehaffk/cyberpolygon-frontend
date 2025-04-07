@@ -1,135 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
+import { useParams, Link } from 'react-router-dom';
+import { getTaskById, submitFlag } from '../api/tasks';
+import ReactMarkdown from 'react-markdown';
 
 const TaskPage = () => {
   const { id } = useParams();
   const [task, setTask] = useState(null);
+  const [flag, setFlag] = useState('');
+  const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [flagInput, setFlagInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState(null);
-
-  // Демо-задание для отображения
-  const demoTask = {
-    id: id,
-    title: 'SQL Injection: Уязвимая авторизация',
-    description: `
-# SQL Injection в форме авторизации
-
-В этом задании вам предстоит использовать уязвимость SQL Injection, чтобы обойти авторизацию на веб-сайте.
-
-## Описание уязвимости
-
-SQL Injection - это атака, направленная на внедрение SQL-кода в запросы, которые приложение отправляет в базу данных. 
-Уязвимость возникает, когда пользовательский ввод не валидируется должным образом.
-
-## Ваша задача
-
-1. Исследуйте форму авторизации
-2. Найдите способ обойти проверку пароля
-3. Авторизуйтесь как пользователь admin
-4. Получите флаг из личного кабинета администратора
-
-## Подсказки
-
-- Стандартный SQL-запрос для проверки авторизации может выглядеть так:
-\`\`\`sql
-SELECT * FROM users WHERE username = '$username' AND password = '$password'
-\`\`\`
-- Подумайте, как можно модифицировать этот запрос, чтобы условие всегда возвращало true
-- Оператор OR может быть полезен
-    `,
-    difficulty: 'Средний',
-    category: 'Web',
-    points: 200,
-    solved_by: 128,
-    created_at: '2023-12-15',
-    is_completed: false,
-    vm_url: 'https://lab.cyberpolygon.ru/vm/task123'
-  };
+  const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
-    // В реальном приложении здесь был бы запрос к API
-    const fetchTask = async () => {
+    const loadTask = async () => {
       try {
         setLoading(true);
-        // Имитация запроса
-        // const response = await axiosInstance.get(`/api/tasks/${id}`);
-        // setTask(response.data);
-        
-        // Используем демо-данные
-        setTimeout(() => {
-          setTask(demoTask);
-          setLoading(false);
-        }, 500);
+        const taskData = await getTaskById(id);
+        setTask(taskData);
       } catch (err) {
-        console.error('Ошибка при загрузке задания:', err);
-        setError('Не удалось загрузить задание. Пожалуйста, попробуйте позже.');
+        console.error('Error loading task:', err);
+        setError('Не удалось загрузить задание');
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchTask();
+    loadTask();
   }, [id]);
 
-  const handleSubmitFlag = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!flagInput.trim()) return;
-    
+    if (!flag.trim()) return;
+
+    setError(null);
+    setResult(null);
+    setSubmitting(true);
+
     try {
-      setSubmitting(true);
-      
-      // Имитация запроса для проверки флага
-      // const response = await axiosInstance.post(`/api/tasks/${id}/check`, {
-      //   flag: flagInput
-      // });
-      
-      // Имитация ответа
-      setTimeout(() => {
-        // Проверка флага (для демо, в реальности это будет на сервере)
-        const isCorrect = flagInput.toLowerCase() === 'flag{sql_injection_master}';
-        
+      const result = await submitFlag(id, flag);
+      if (result.correct) {
         setResult({
-          success: isCorrect,
-          message: isCorrect ? 'Поздравляем! Флаг верный.' : 'Неверный флаг. Попробуйте еще раз.'
+          status: 'correct',
+          message: 'Флаг верный! Задание выполнено.'
         });
-        
-        if (isCorrect) {
-          setTask(prev => ({ ...prev, is_completed: true }));
-        }
-        
-        setSubmitting(false);
-      }, 1000);
+        setTask(prev => ({
+          ...prev,
+          is_solved: true
+        }));
+      } else {
+        setResult({
+          status: 'error',
+          message: 'Неверный флаг. Попробуйте еще раз.'
+        });
+      }
     } catch (err) {
-      console.error('Ошибка при отправке флага:', err);
+      console.error('Error submitting flag:', err);
       setResult({
-        success: false,
-        message: 'Ошибка при проверке флага. Пожалуйста, попробуйте позже.'
+        status: 'error',
+        message: err.message || 'Не удалось отправить флаг'
       });
+    } finally {
       setSubmitting(false);
     }
-  };
-
-  // Функция для рендеринга markdown
-  const renderMarkdown = (content) => {
-    // В реальном приложении здесь использовался бы react-markdown
-    return (
-      <div dangerouslySetInnerHTML={{ __html: content
-        .replace(/#{1,6} (.+)/g, (match, p1, offset, string) => {
-          const level = match.trim().indexOf(' ');
-          return `<h${level} style="margin-top: 20px; margin-bottom: 10px; color: var(--text-light)">${p1}</h${level}>`;
-        })
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/```([^`]+)```/g, '<pre style="background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; overflow-x: auto;"><code>$1</code></pre>')
-        .replace(/`([^`]+)`/g, '<code style="background-color: rgba(0,0,0,0.3); padding: 2px 5px; border-radius: 4px;">$1</code>')
-        .replace(/- (.+)/g, '<li style="margin-left: 20px;">$1</li>')
-        .replace(/\n/g, '<br />')
-      }} />
-    );
   };
 
   if (loading) {
@@ -140,7 +74,7 @@ SELECT * FROM users WHERE username = '$username' AND password = '$password'
     );
   }
 
-  if (error) {
+  if (error && !task) {
     return (
       <div className="container" style={{ paddingTop: '120px', paddingBottom: '50px' }}>
         <div style={{
@@ -166,335 +100,322 @@ SELECT * FROM users WHERE username = '$username' AND password = '$password'
 
   return (
     <div className="container" style={{ paddingTop: '120px', paddingBottom: '50px' }}>
+      {/* Хлебные крошки */}
+      <div style={{
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        color: 'var(--text-gray)',
+        fontSize: '0.9rem'
+      }}>
+        <Link to="/tasks" style={{ color: 'var(--text-gray)', textDecoration: 'none' }}>Задания</Link>
+        <span style={{ fontSize: '1.2rem', lineHeight: 1 }}>/</span>
+        <span style={{ color: 'var(--text-light)' }}>{task.title}</span>
+      </div>
+      
+      {/* Шапка задания */}
       <div style={{
         display: 'flex',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '20px'
+        marginBottom: '30px'
       }}>
         <h1 style={{
-          fontSize: '1.8rem',
+          fontSize: '2.2rem',
           background: 'linear-gradient(90deg, #6a00ff, #00f0ff)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
+          marginBottom: '10px'
         }}>
           {task.title}
         </h1>
         
         <div style={{
           display: 'flex',
-          gap: '10px',
-          alignItems: 'center'
+          gap: '15px',
+          alignItems: 'center',
+          flexWrap: 'wrap'
         }}>
-          <span style={{
+          <div style={{
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            color: task.difficulty === 'Легкий' ? 'var(--accent-blue)' : 
-              task.difficulty === 'Средний' ? '#ffc107' : '#ff4444',
-            padding: '5px 10px',
+            color: getDifficultyColor(task.difficulty),
+            padding: '8px 15px',
             borderRadius: '5px',
-            fontSize: '0.8rem',
+            fontSize: '0.9rem',
             fontWeight: 'bold',
-            border: `1px solid ${task.difficulty === 'Легкий' ? 'rgba(0, 240, 255, 0.3)' : 
-              task.difficulty === 'Средний' ? 'rgba(255, 193, 7, 0.3)' : 'rgba(255, 68, 68, 0.3)'}`
+            border: `1px solid ${getDifficultyColor(task.difficulty)}`
           }}>
             {task.difficulty}
-          </span>
-          <span style={{
+          </div>
+          
+          <div style={{
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            color: 'var(--text-gray)',
-            padding: '5px 10px',
+            color: 'var(--accent-blue)',
+            padding: '8px 15px',
             borderRadius: '5px',
-            fontSize: '0.8rem',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
+            fontSize: '0.9rem',
+            border: '1px solid rgba(0, 240, 255, 0.3)'
           }}>
             {task.category}
-          </span>
-          <span style={{
+          </div>
+          
+          <div style={{
             backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            color: 'var(--accent-purple)',
-            padding: '5px 10px',
+            color: '#ffc107',
+            padding: '8px 15px',
             borderRadius: '5px',
-            fontSize: '0.8rem',
-            fontWeight: 'bold',
-            border: '1px solid rgba(106, 0, 255, 0.3)'
+            fontSize: '0.9rem',
+            border: '1px solid rgba(255, 193, 7, 0.3)'
           }}>
             {task.points} pts
-          </span>
+          </div>
+          
+          {task.is_solved && (
+            <div style={{
+              backgroundColor: 'rgba(76, 175, 80, 0.2)',
+              color: '#4caf50',
+              padding: '8px 15px',
+              borderRadius: '5px',
+              fontSize: '0.9rem',
+              fontWeight: 'bold',
+              border: '1px solid rgba(76, 175, 80, 0.3)'
+            }}>
+              Решено
+            </div>
+          )}
         </div>
       </div>
       
+      {/* Описание задания */}
       <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px'
+        backgroundColor: 'var(--bg-card)',
+        borderRadius: '10px',
+        padding: '30px',
+        boxShadow: 'var(--card-shadow)',
+        border: '1px solid rgba(106, 0, 255, 0.2)',
+        marginBottom: '30px'
       }}>
-        {/* Описание задания */}
         <div style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '10px',
-          padding: '30px',
-          boxShadow: 'var(--card-shadow)',
-        }}>
-          <h2 style={{
-            fontSize: '1.3rem',
-            marginBottom: '20px',
-            color: 'var(--text-light)'
-          }}>
-            Описание
-          </h2>
-          
-          <div style={{
-            color: 'var(--text-light)',
-            fontSize: '0.95rem',
-            lineHeight: '1.6',
-          }}>
-            {renderMarkdown(task.description)}
+          color: 'var(--text-light)',
+          lineHeight: '1.7',
+          fontSize: '1rem'
+        }} className="markdown-content">
+          <ReactMarkdown>
+            {task.description}
+          </ReactMarkdown>
+        </div>
+        
+        {/* Медиа-файлы задания */}
+        {task.media && task.media.length > 0 && (
+          <div style={{ marginTop: '20px' }}>
+            {task.media.map((item, index) => {
+              if (item.type.startsWith('image/')) {
+                return (
+                  <div key={index} style={{ marginBottom: '15px' }}>
+                    <img 
+                      src={`http://localhost:8000${item.url}`} 
+                      alt={`Изображение ${index + 1}`}
+                      style={{
+                        maxWidth: '100%',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}
+                    />
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={index} style={{ marginBottom: '15px' }}>
+                    <a 
+                      href={`http://localhost:8000${item.url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        padding: '10px 15px',
+                        backgroundColor: 'rgba(106, 0, 255, 0.1)',
+                        color: 'var(--accent-purple)',
+                        borderRadius: '5px',
+                        textDecoration: 'none',
+                        border: '1px solid rgba(106, 0, 255, 0.3)'
+                      }}
+                    >
+                      Скачать файл {index + 1}
+                    </a>
+                  </div>
+                );
+              }
+            })}
           </div>
-        </div>
+        )}
         
-        {/* Форма отправки флага */}
-        <div style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '10px',
-          padding: '30px',
-          boxShadow: 'var(--card-shadow)',
-        }}>
-          <h2 style={{
-            fontSize: '1.3rem',
-            marginBottom: '20px',
-            color: 'var(--text-light)'
+        {/* Подсказка */}
+        {task.hint && (
+          <div style={{
+            marginTop: '30px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            paddingTop: '20px'
           }}>
-            Отправить флаг
-          </h2>
-          
-          {task.is_completed ? (
-            <div style={{
-              backgroundColor: 'rgba(40, 167, 69, 0.1)',
-              padding: '15px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              border: '1px solid rgba(40, 167, 69, 0.3)',
-              color: '#28a745'
-            }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '10px' }}>
-                <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="#28a745"/>
-              </svg>
-              Вы уже решили это задание!
-            </div>
-          ) : (
-            <form onSubmit={handleSubmitFlag}>
-              <div style={{
+            <button
+              onClick={() => setShowHint(!showHint)}
+              style={{
+                backgroundColor: 'transparent',
+                border: '1px solid #ffc107',
+                color: '#ffc107',
+                padding: '10px 20px',
+                borderRadius: '5px',
+                cursor: 'pointer',
                 display: 'flex',
-                flexDirection: 'column',
-                gap: '15px'
+                alignItems: 'center',
+                gap: '10px',
+                fontSize: '0.9rem'
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V11H13V17ZM13 9H11V7H13V9Z" fill="#ffc107"/>
+              </svg>
+              {showHint ? 'Скрыть подсказку' : 'Показать подсказку'}
+            </button>
+            
+            {showHint && (
+              <div style={{
+                marginTop: '20px',
+                backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                border: '1px solid rgba(255, 193, 7, 0.3)',
+                borderRadius: '8px',
+                padding: '15px 20px'
               }}>
-                <input
-                  type="text"
-                  placeholder="Введите флаг в формате flag{...}"
-                  value={flagInput}
-                  onChange={(e) => setFlagInput(e.target.value)}
-                  style={{
-                    padding: '12px 20px',
-                    width: '100%',
-                    fontSize: '0.9rem',
-                    borderRadius: '8px',
-                    border: '1px solid rgba(106, 0, 255, 0.3)',
-                    background: 'rgba(26, 28, 41, 0.8)',
-                    color: 'white',
-                    fontFamily: 'JetBrains Mono, monospace'
-                  }}
-                />
+                <div style={{
+                  color: '#ffc107',
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  marginBottom: '10px'
+                }}>
+                  Подсказка
+                </div>
                 
-                <button
-                  type="submit"
-                  disabled={submitting || !flagInput.trim()}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    backgroundColor: 'var(--accent-purple)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: submitting || !flagInput.trim() ? 'not-allowed' : 'pointer',
-                    opacity: submitting || !flagInput.trim() ? 0.7 : 1,
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: '0.9rem',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  {submitting ? 'Проверка...' : 'Отправить флаг'}
-                </button>
+                <p style={{
+                  color: 'var(--text-light)',
+                  margin: 0,
+                  fontSize: '0.95rem'
+                }}>
+                  {task.hint}
+                </p>
               </div>
-            </form>
-          )}
-          
-          {result && (
-            <div style={{
-              marginTop: '15px',
-              backgroundColor: result.success ? 'rgba(40, 167, 69, 0.1)' : 'rgba(255, 68, 68, 0.1)',
-              padding: '15px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              border: result.success ? '1px solid rgba(40, 167, 69, 0.3)' : '1px solid rgba(255, 68, 68, 0.3)',
-              color: result.success ? '#28a745' : '#ff4444'
-            }}>
-              {result.success ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '10px' }}>
-                  <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="#28a745"/>
-                </svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '10px' }}>
-                  <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#ff4444"/>
-                </svg>
-              )}
-              {result.message}
-            </div>
-          )}
-        </div>
-        
-        {/* Виртуальная машина */}
-        <div style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '10px',
-          padding: '30px',
-          boxShadow: 'var(--card-shadow)',
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Форма отправки флага */}
+      <div style={{
+        backgroundColor: 'var(--bg-card)',
+        borderRadius: '10px',
+        padding: '30px',
+        boxShadow: 'var(--card-shadow)',
+        border: '1px solid rgba(106, 0, 255, 0.2)'
+      }}>
+        <h2 style={{
+          fontSize: '1.3rem',
+          marginBottom: '20px',
+          color: 'var(--text-light)'
         }}>
-          <h2 style={{
-            fontSize: '1.3rem',
-            marginBottom: '20px',
-            color: 'var(--text-light)'
-          }}>
-            Доступ к лабораторному стенду
-          </h2>
-          
-          <p style={{
-            color: 'var(--text-gray)',
-            marginBottom: '20px',
-            fontSize: '0.95rem'
-          }}>
-            Для решения этого задания вам доступен лабораторный стенд.
-            Нажмите на кнопку ниже, чтобы открыть его в новой вкладке.
-          </p>
+          Отправка флага
+        </h2>
+        
+        {result && (
+          <div className={`result ${result.status}`}>
+            {result.message}
+          </div>
+        )}
+        
+        <form onSubmit={handleSubmit} className="flag-form">
+          <div style={{ marginBottom: '20px' }}>
+            <label 
+              htmlFor="flag"
+              style={{
+                display: 'block',
+                marginBottom: '8px',
+                color: 'var(--text-light)',
+                fontSize: '0.9rem'
+              }}
+            >
+              Флаг
+            </label>
+            <input
+              type="text"
+              id="flag"
+              value={flag}
+              onChange={(e) => setFlag(e.target.value)}
+              placeholder="Введите флаг в формате CTF{...}"
+              disabled={task.is_solved || submitting}
+              style={{
+                padding: '12px 15px',
+                width: '100%',
+                fontSize: '0.9rem',
+                borderRadius: '8px',
+                border: '1px solid rgba(106, 0, 255, 0.3)',
+                background: 'rgba(26, 28, 41, 0.8)',
+                color: 'white',
+                fontFamily: 'JetBrains Mono, monospace'
+              }}
+            />
+          </div>
           
           <button
-            onClick={() => window.open(task.vm_url, '_blank')}
+            type="submit"
+            disabled={task.is_solved || submitting || flag.trim() === ''}
             style={{
+              backgroundColor: task.is_solved ? '#4caf50' : 'var(--accent-purple)',
+              color: 'white',
+              padding: '12px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: task.is_solved ? 'not-allowed' : submitting ? 'wait' : flag.trim() === '' ? 'not-allowed' : 'pointer',
+              opacity: task.is_solved || flag.trim() === '' ? 0.7 : 1,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              padding: '12px 20px',
-              backgroundColor: 'var(--bg-dark)',
-              color: 'var(--text-light)',
-              border: '1px solid var(--accent-purple)',
-              borderRadius: '8px',
-              cursor: 'pointer',
+              gap: '10px',
               fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '0.9rem',
-              gap: '10px'
+              fontSize: '0.95rem'
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 19H5V5H12V3H5C3.89 3 3 3.9 3 5V19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V12H19V19ZM14 3V5H17.59L7.76 14.83L9.17 16.24L19 6.41V10H21V3H14Z" fill="var(--text-light)"/>
-            </svg>
-            Открыть лабораторный стенд
+            {task.is_solved ? (
+              <>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="white"/>
+                </svg>
+                Задание решено
+              </>
+            ) : submitting ? (
+              'Отправка...'
+            ) : (
+              'Отправить флаг'
+            )}
           </button>
-        </div>
-        
-        {/* Статистика */}
-        <div style={{
-          backgroundColor: 'var(--bg-card)',
-          borderRadius: '10px',
-          padding: '30px',
-          boxShadow: 'var(--card-shadow)',
-        }}>
-          <h2 style={{
-            fontSize: '1.3rem',
-            marginBottom: '20px',
-            color: 'var(--text-light)'
-          }}>
-            Статистика
-          </h2>
-          
-          <div style={{
-            display: 'flex',
-            gap: '20px',
-            flexWrap: 'wrap'
-          }}>
-            <div style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              padding: '15px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              minWidth: '150px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '5px' }}>
-                Решено
-              </div>
-              <div style={{ fontSize: '1.2rem', color: 'var(--accent-blue)', fontWeight: 'bold' }}>
-                {task.solved_by} участниками
-              </div>
-            </div>
-            
-            <div style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              padding: '15px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              minWidth: '150px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '5px' }}>
-                Сложность
-              </div>
-              <div style={{ 
-                fontSize: '1.2rem', 
-                fontWeight: 'bold',
-                color: task.difficulty === 'Легкий' ? 'var(--accent-blue)' : 
-                  task.difficulty === 'Средний' ? '#ffc107' : '#ff4444'
-              }}>
-                {task.difficulty}
-              </div>
-            </div>
-            
-            <div style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              padding: '15px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              minWidth: '150px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '5px' }}>
-                Категория
-              </div>
-              <div style={{ fontSize: '1.2rem', color: 'var(--accent-purple)', fontWeight: 'bold' }}>
-                {task.category}
-              </div>
-            </div>
-            
-            <div style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              padding: '15px',
-              borderRadius: '8px',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              minWidth: '150px',
-              textAlign: 'center'
-            }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-gray)', marginBottom: '5px' }}>
-                Добавлено
-              </div>
-              <div style={{ fontSize: '1.2rem', color: 'var(--text-light)', fontWeight: 'bold' }}>
-                {new Date(task.created_at).toLocaleDateString()}
-              </div>
-            </div>
-          </div>
-        </div>
+        </form>
       </div>
     </div>
   );
+};
+
+// Вспомогательные функции
+const getDifficultyColor = (difficulty) => {
+  switch(difficulty.toLowerCase()) {
+    case 'easy':
+    case 'легкий':
+      return '#4caf50';
+    case 'medium':
+    case 'средний':
+      return '#ffc107';
+    case 'hard':
+    case 'сложный':
+      return '#ff4444';
+    default:
+      return 'var(--accent-blue)';
+  }
 };
 
 export default TaskPage; 
