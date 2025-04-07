@@ -20,7 +20,9 @@ module.exports = {
   },
   style: {
     postcss: {
+      mode: 'extends',
       plugins: [
+        require('tailwindcss/nesting'),
         require('tailwindcss'),
         require('autoprefixer'),
       ],
