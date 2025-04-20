@@ -1,19 +1,17 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
-import { login, logout } from '../store/slices/authSlice';
+import { RootState, AppDispatch } from '../store';
+import { login, logout, getCurrentUser } from '../store/slices/authSlice';
 
 export const useAuth = () => {
-  const dispatch = useDispatch();
-  const { user, isAuthenticated, loading, error } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, loading, error } = useSelector((state: RootState) => state.auth);
 
   const handleLogin = async (email: string, password: string) => {
     try {
-      await dispatch(login({ email, password })).unwrap();
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
+      await dispatch(login()).unwrap();
+    } catch (err) {
+      console.error('Failed to login:', err);
+      throw err;
     }
   };
 
@@ -21,12 +19,22 @@ export const useAuth = () => {
     dispatch(logout());
   };
 
+  const checkAuth = async () => {
+    try {
+      await dispatch(getCurrentUser()).unwrap();
+    } catch (err) {
+      console.error('Failed to get current user:', err);
+      throw err;
+    }
+  };
+
   return {
     user,
-    isAuthenticated,
     loading,
     error,
+    isAuthenticated: !!user,
     login: handleLogin,
     logout: handleLogout,
+    checkAuth
   };
 }; 

@@ -31,7 +31,6 @@ class TerminalService {
       this.ws = new WebSocket(wsUrl);
       
       this.ws.onopen = () => {
-        console.log('Terminal WebSocket connection established');
         this.isConnected = true;
         this.reconnectAttempts = 0;
         if (onOpen) onOpen();
@@ -47,7 +46,6 @@ class TerminalService {
       };
       
       this.ws.onclose = () => {
-        console.log('Terminal WebSocket connection closed');
         this.isConnected = false;
         if (onClose) onClose();
         
@@ -84,7 +82,6 @@ class TerminalService {
     }
     
     this.reconnectAttempts++;
-    console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
     
     this.reconnectTimeoutId = setTimeout(() => {
       this.connect();

@@ -1,10 +1,12 @@
 import { Terminal } from 'xterm';
 
 class WebSocketService {
-  private socket: WebSocket | null = null;
-  private terminal: Terminal | null = null;
+  constructor() {
+    this.socket = null;
+    this.terminal = null;
+  }
 
-  connect(terminalInstance: Terminal): void {
+  connect(terminalInstance) {
     this.terminal = terminalInstance;
     const token = localStorage.getItem('token');
     
@@ -53,7 +55,7 @@ class WebSocketService {
     };
   }
   
-  sendCommand(command: string): void {
+  sendCommand(command) {
     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({ command }));
     } else if (this.terminal) {
@@ -61,7 +63,7 @@ class WebSocketService {
     }
   }
   
-  disconnect(): void {
+  disconnect() {
     if (this.socket) {
       this.socket.close();
       this.socket = null;

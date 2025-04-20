@@ -1,16 +1,14 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
+import authApi from '../api/auth';
 
-const PrivateRoute = ({ redirectPath = '/login' }) => {
-  // Проверка на наличие токена в localStorage для имитации авторизации
-  const isAuthenticated = localStorage.getItem('token') !== null;
+const PrivateRoute = ({ redirectPath = '/auth' }) => {
+  const isAuthenticated = authApi.isAuthenticated();
   
   if (!isAuthenticated) {
-    // Если пользователь не авторизован, перенаправляем на страницу логина
     return <Navigate to={redirectPath} replace />;
   }
 
-  // Если пользователь авторизован, рендерим вложенные маршруты
   return <Outlet />;
 };
 

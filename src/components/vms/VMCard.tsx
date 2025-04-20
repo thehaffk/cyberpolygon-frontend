@@ -1,73 +1,61 @@
 import React from 'react';
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardActions,
-  Button,
-  Typography,
-  Chip,
-  Box,
-} from '@mui/material';
+import { Card, CardContent, CardActions, Typography, Button, Box } from '@mui/material';
 import { motion } from 'framer-motion';
 import { VirtualMachine } from '../../types/vm';
 
 interface VMCardProps {
   vm: VirtualMachine;
-  onStart: (id: number) => void;
-  onStop: (id: number) => void;
-  onReset: (id: number) => void;
+  onStart: (id: string) => void;
+  onStop: (id: string) => void;
+  onReset: (id: string) => void;
 }
 
 const MotionCard = motion(Card);
 
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'running':
-      return 'success';
-    case 'stopped':
-      return 'error';
-    case 'error':
-      return 'error';
-    default:
-      return 'default';
-  }
-};
-
-const VMCard: React.FC<VMCardProps> = ({ vm, onStart, onStop, onReset }) => {
+export default function VMCard({ vm, onStart, onStop, onReset }: VMCardProps) {
   return (
     <MotionCard
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      role="article"
-      aria-labelledby={`vm-title-${vm.id}`}
+      transition={{ duration: 0.3 }}
+      sx={{ minWidth: 275 }}
     >
-      <CardHeader
-        title={vm.name}
-        titleTypographyProps={{ id: `vm-title-${vm.id}` }}
-        action={
-          <Chip
-            label={vm.status}
-            color={getStatusColor(vm.status)}
-            size="small"
-            aria-label={`Статус: ${vm.status}`}
-          />
-        }
-      />
       <CardContent>
-        <Box sx={{ mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" component="div">
+            {vm.name}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: vm.status === 'running' ? 'success.main' : 'error.main',
+              fontWeight: 'bold',
+            }}
+          >
+            {vm.status === 'running' ? 'Запущена' : 'Остановлена'}
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" gutterBottom>
+          {vm.description}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          IP: {vm.ip || 'Не назначен'}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          ОС: {vm.os}
+        </Typography>
+        <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            IP: {vm.ip}
+            Ресурсы:
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            CPU: {vm.cpu_cores} ядер
+            CPU: {vm.resources.cpu} ядер
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            RAM: {vm.ram} GB
+            RAM: {vm.resources.ram} GB
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Диск: {vm.disk_size} GB
+            Диск: {vm.resources.disk} GB
           </Typography>
         </Box>
       </CardContent>
@@ -101,6 +89,4 @@ const VMCard: React.FC<VMCardProps> = ({ vm, onStart, onStop, onReset }) => {
       </CardActions>
     </MotionCard>
   );
-};
-
-export default VMCard; 
+} 

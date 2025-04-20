@@ -1,6 +1,70 @@
-# CyberPolygon Frontend
+# Киберполигон
 
-Фронтенд для образовательной платформы CyberPolygon, созданной для обучения кибербезопасности через практические задания и интерактивные курсы.
+Фронтенд для образовательной платформы по кибербезопасности.
+
+## Технологии
+
+- React 18
+- Material UI 5
+- Redux Toolkit
+- React Router 6
+- Axios
+
+## Функциональность
+
+- Аутентификация и авторизация
+- Просмотр курсов и уроков
+- Выполнение заданий
+- Прохождение тестов
+- Работа с терминалом
+
+## Установка
+
+```bash
+npm install
+```
+
+## Запуск
+
+```bash
+npm start
+```
+
+## Сборка
+
+```bash
+npm run build
+```
+
+## Тестирование
+
+```bash
+npm test
+```
+
+## Конфигурация
+
+Создайте файл `.env` в корне проекта:
+
+```env
+REACT_APP_API_URL=http://localhost:8000
+REACT_APP_WS_URL=ws://localhost:8000
+REACT_APP_USE_MOCKS=false
+```
+
+## Структура проекта
+
+```
+src/
+  ├── api/           # API клиенты
+  ├── components/    # Компоненты
+  ├── hooks/         # Пользовательские хуки
+  ├── pages/         # Страницы
+  ├── store/         # Redux хранилище
+  ├── theme/         # Тема Material UI
+  ├── App.jsx        # Корневой компонент
+  └── index.js       # Точка входа
+```
 
 ## Реализованный функционал
 
@@ -49,71 +113,34 @@
 - JWT авторизация для всех запросов
 - Обработка медиа-файлов и изображений
 
-## Запуск проекта
+## Работа с репозиторием
 
-### Разработка
+### Ветки
 
-```bash
-# Установка зависимостей
-npm install
+- `main` - основная ветка, стабильная версия
+- `haffk` - рабочая ветка с текущими изменениями
 
-# Запуск в режиме разработки
-npm start
-```
+### Создание PR
 
-Приложение запустится на http://localhost:3000
+1. Создайте новую ветку от `haffk` с говорящим названием:
+   ```
+   git checkout -b feature/oauth-support
+   ```
 
-### Сборка и деплой
+2. Внесите необходимые изменения и создайте коммит:
+   ```
+   git add .
+   git commit -m "Add OAuth authentication"
+   ```
 
-```bash
-# Создание оптимизированной сборки
-npm run build
+3. Отправьте ветку в репозиторий:
+   ```
+   git push -u origin feature/oauth-support
+   ```
 
-# Запуск собранной версии
-npm install -g serve
-serve -s build
-```
+4. Создайте Pull Request в GitHub, указав `haffk` как целевую ветку
 
-## Конфигурация
+## Контакты
 
-Backend API должен быть доступен по адресу `http://localhost:8000`:
-
-```
-REACT_APP_API_URL=http://localhost:8000
-```
-
-## Структура проекта
-
-```
-frontend/
-├── public/              # Статические файлы
-├── src/
-│   ├── api/             # API клиенты
-│   │   ├── axiosInstance.ts  # Конфигурация Axios
-│   │   ├── auth.ts      # Авторизация
-│   │   ├── courses.ts   # Курсы
-│   │   ├── tasks.ts     # Задания
-│   │   ├── tests.ts     # Тесты
-│   │   ├── media.ts     # Загрузка файлов
-│   │   └── terminal.ts  # WebSocket подключение
-│   ├── components/      # React компоненты
-│   │   ├── layout/      # Компоненты макета (Navbar, Footer)
-│   │   └── ...          # Другие компоненты
-│   ├── pages/           # Страницы приложения
-│   ├── services/        # Сервисы
-│   ├── App.jsx          # Основной компонент с маршрутизацией
-│   ├── index.tsx        # Точка входа
-│   ├── theme.ts         # Тема MUI
-│   └── index.css        # Глобальные стили
-└── package.json         # Зависимости
-```
-
-## Технологии
-
-- React
-- React Router
-- Material UI
-- Axios
-- WebSocket
-- React Markdown
-- xterm.js
+При возникновении проблем или предложений создайте issue в репозитории:
+[github.com/cyberpolygon2024/cyberpolygon-front](https://github.com/cyberpolygon2024/cyberpolygon-front)

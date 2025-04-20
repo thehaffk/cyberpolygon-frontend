@@ -39,23 +39,28 @@ const TerminalPage = () => {
       wsRef.current = new TerminalWebSocket(selectedTask.id);
       setConnectionStatus('connecting');
 
-      wsRef.current.onMessage((data) => {
+      wsRef.current.onMessage = (data) => {
         if (data.type === 'output') {
           setOutput(prev => [...prev, { type: 'output', content: data.output }]);
+        } else if (data.type === 'error') {
+          setError(data.error);
+          setConnectionStatus('error');
         }
-      });
+      };
 
-      wsRef.current.onError((error) => {
+      wsRef.current.onError = (error) => {
         console.error('WebSocket error:', error);
         setError('Ошибка подключения к терминалу');
         setConnectionStatus('error');
-      });
+      };
 
-      wsRef.current.onClose(() => {
+      wsRef.current.onClose = () => {
         setConnectionStatus('disconnected');
-      });
+      };
 
+      wsRef.current.connect();
       setConnectionStatus('connected');
+
     } catch (err) {
       console.error('Failed to connect:', err);
       setError(err.message);
@@ -64,7 +69,7 @@ const TerminalPage = () => {
 
     return () => {
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef.current.disconnect();
       }
     };
   }, [selectedTask]);

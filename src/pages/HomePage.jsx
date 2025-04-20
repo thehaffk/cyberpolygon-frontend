@@ -1,123 +1,189 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { 
+  Container, 
+  Typography, 
+  Button, 
+  Grid, 
+  Box, 
+  Card, 
+  CardContent,
+  CardActionArea,
+  useTheme 
+} from '@mui/material';
+import SchoolIcon from '@mui/icons-material/School';
+import AssignmentIcon from '@mui/icons-material/Assignment';
+import QuizIcon from '@mui/icons-material/Quiz';
+import authApi from '../api/auth';
 
 const HomePage = () => {
+  const theme = useTheme();
+  const isAuthenticated = authApi.isAuthenticated();
+
   const features = [
     {
       id: 1,
       title: 'Курсы',
-      description: 'Структурированные материалы для изучения теории кибербезопасности с интерактивными уроками и примерами кода',
-      icon: '📚',
-      link: '/courses'
+      description: 'Погрузитесь в мир кибербезопасности через интерактивные уроки и реальные примеры',
+      icon: <SchoolIcon sx={{ fontSize: 40 }} />,
+      link: '/courses',
+      color: theme.palette.primary.main
     },
     {
       id: 2,
       title: 'Задания',
-      description: 'Практические упражнения для закрепления полученных знаний и отработки навыков кибербезопасности',
-      icon: '🎯',
-      link: '/tasks'
+      description: 'Отточите навыки на практических заданиях разной сложности',
+      icon: <AssignmentIcon sx={{ fontSize: 40 }} />,
+      link: '/tasks',
+      color: theme.palette.secondary.main
     },
     {
       id: 3,
-      title: 'Терминал',
-      description: 'Встроенная консоль для выполнения практических заданий и экспериментов с инструментами безопасности',
-      icon: '💻',
-      link: '/terminal'
-    },
-    {
-      id: 4,
       title: 'Тесты',
-      description: 'Проверьте свои знания с помощью интерактивных тестов различного уровня сложности',
-      icon: '✅',
-      link: '/tests'
+      description: 'Проверьте свои знания в реальном времени',
+      icon: <QuizIcon sx={{ fontSize: 40 }} />,
+      link: '/tests',
+      color: theme.palette.success.main
     }
   ];
 
   return (
-    <div className="container">
-      <div style={{ 
-        paddingTop: '120px', 
-        paddingBottom: '80px', 
-        textAlign: 'center'
-      }}>
-        <h1 style={{
-          fontSize: '3.5rem',
-          marginBottom: '25px',
-          background: 'linear-gradient(90deg, #6a00ff, #00f0ff)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 0 20px rgba(106, 0, 255, 0.2)'
-        }}>
-          Cyber Polygon
-        </h1>
-        
-        <p style={{
-          fontSize: '1.25rem',
-          maxWidth: '800px',
-          margin: '0 auto 50px',
-          color: 'var(--text-gray)',
-          lineHeight: '1.8'
-        }}>
-          Образовательная платформа, где теория встречается с практикой.<br/>
-          Погрузитесь в мир кибербезопасности через интерактивные курсы,
-          практические задания и реалистичные сценарии.
-        </p>
-        
-        <div style={{
-          marginTop: '30px',
-          display: 'flex',
-          gap: '20px',
-          justifyContent: 'center',
-          marginBottom: '50px'
-        }}>
-          <Link to="/courses">
-            <button style={{
-              padding: '14px 28px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              backgroundColor: 'var(--accent-purple)',
-              boxShadow: '0 5px 15px rgba(106, 0, 255, 0.4)',
-              border: 'none',
-              borderRadius: '8px',
-              transition: 'all 0.3s'
-            }}>
-              Начать обучение
-            </button>
-          </Link>
-          <Link to="/register">
-            <button style={{
-              padding: '14px 28px',
-              fontSize: '1rem',
-              fontWeight: 'bold',
-              backgroundColor: 'transparent',
-              border: '2px solid var(--accent-blue)',
-              color: 'var(--accent-blue)',
-              borderRadius: '8px',
-              transition: 'all 0.3s'
-            }}>
-              Регистрация
-            </button>
-          </Link>
-        </div>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '30px',
-          marginTop: '60px'
-        }}>
-          {features.map(feature => (
-            <Link to={feature.link} key={feature.id} style={{ textDecoration: 'none' }}>
-              <div className="feature-card">
-                <div className="feature-icon">{feature.icon}</div>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
+    <Box sx={{ pt: 8, pb: 10 }}>
+      <Container maxWidth="lg">
+        <Box 
+          sx={{
+            textAlign: 'center',
+            mb: 10
+          }}
+        >
+          <Typography
+            variant="h1"
+            sx={{
+              fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4.5rem' },
+              fontWeight: 800,
+              background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 3,
+              letterSpacing: '-0.02em'
+            }}
+          >
+            Киберполигон
+          </Typography>
+
+          <Typography
+            variant="h5"
+            sx={{
+              maxWidth: '700px',
+              mx: 'auto',
+              mb: 6,
+              color: 'text.secondary',
+              fontWeight: 400,
+              letterSpacing: '0.01em',
+              lineHeight: 1.6
+            }}
+          >
+            Начни обучение по кибербезопасности
+          </Typography>
+
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 3,
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              mb: 10
+            }}
+          >
+            <Button
+              component={Link}
+              to={isAuthenticated ? "/courses" : "/auth"}
+              variant="contained"
+              size="large"
+              sx={{
+                px: 5,
+                py: 1.5,
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                borderRadius: 1.5,
+                boxShadow: 4
+              }}
+            >
+              {isAuthenticated ? "Начать обучение" : "Войти"}
+            </Button>
+          </Box>
+
+          <Grid container spacing={4} justifyContent="center">
+            {features.map((feature) => (
+              <Grid item xs={12} sm={6} md={4} key={feature.id}>
+                <Card 
+                  sx={{ 
+                    height: '100%',
+                    bgcolor: 'background.paper',
+                    transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                    borderRadius: 2,
+                    overflow: 'hidden',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                    '&:hover': {
+                      transform: 'translateY(-8px)',
+                      boxShadow: '0 12px 30px rgba(0,0,0,0.15)'
+                    }
+                  }}
+                >
+                  <CardActionArea 
+                    component={Link} 
+                    to={feature.link}
+                    sx={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
+                  >
+                    <Box 
+                      sx={{ 
+                        p: 3, 
+                        display: 'flex', 
+                        justifyContent: 'center',
+                        bgcolor: `${feature.color}10`
+                      }}
+                    >
+                      <Box 
+                        sx={{ 
+                          color: feature.color,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {feature.icon}
+                      </Box>
+                    </Box>
+                    <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                      <Typography 
+                        gutterBottom 
+                        variant="h6" 
+                        component="div"
+                        sx={{ 
+                          fontWeight: 700,
+                          color: 'text.primary',
+                          mb: 1.5
+                        }}
+                      >
+                        {feature.title}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary"
+                        sx={{ lineHeight: 1.6 }}
+                      >
+                        {feature.description}
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Container>
+    </Box>
   );
 };
 

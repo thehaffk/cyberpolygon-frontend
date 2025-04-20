@@ -1,38 +1,66 @@
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { API } from '../config/env';
 
-const API_BASE_URL = 'http://localhost:8000';
-
-// Создаем экземпляр axios
 const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  timeout: 10000,
+  baseURL: API.URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Добавляем интерцепторы
+// Add request interceptors
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
-);
-
-axiosInstance.interceptors.response.use(
-  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance; 
+// Add response interceptors
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    
+    // Если 401 и нет флага retry
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        
+        if (refreshToken) {
+          // Попытка обновить токен
+          const response = await axios.post(`${API.BASE_URL}/api/token/refresh/`, {
+            refresh: refreshToken
+          });
+          
+          if (response.data.access) {
+            localStorage.setItem('access_token', response.data.access);
+            
+            // Обновляем заголовок и повторяем запрос
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+            originalRequest.headers['Authorization'] = `Bearer ${response.data.access}`;
+            
+            return axiosInstance(originalRequest);
+          }
+        }
+      } catch (refreshError) {
+        // Если не удалось обновить токен, выходим
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        window.location.href = '/auth';
+      }
+    }
+    
+    return Promise.reject(error);
+  }
+);
+
+export default axiosInstance;

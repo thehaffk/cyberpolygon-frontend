@@ -1,55 +1,90 @@
-class TerminalWebSocket {
+import axiosInstance from './axiosInstance';
+
+export class TerminalWebSocket {
   constructor(taskId) {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('Authentication required');
+    this.taskId = taskId;
+    this.socket = null;
+    this.onMessage = null;
+    this.onError = null;
+    this.onClose = null;
+    this.isConnected = false;
+  }
+
+  connect() {
+    if (this.socket) {
+      this.disconnect();
     }
 
-    this.ws = new WebSocket(`ws://localhost:8000/ws/ssh/?token=${token}&task=${taskId}`);
-    this.messageHandlers = new Set();
-    this.errorHandlers = new Set();
-    this.closeHandlers = new Set();
+    const token = localStorage.getItem('token');
+    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+    this.socket = new WebSocket(`${baseUrl}/ws/ssh/?token=${token}`);
 
-    this.ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      this.messageHandlers.forEach(handler => handler(data));
+    this.socket.onopen = () => {
+      this.isConnected = true;
+      this.connectToTask();
     };
 
-    this.ws.onerror = (error) => {
-      this.errorHandlers.forEach(handler => handler(error));
+    this.socket.onmessage = (event) => {
+      if (this.onMessage) {
+        try {
+          const data = JSON.parse(event.data);
+          this.onMessage(data);
+        } catch (error) {
+          console.error('Error parsing message:', error);
+          this.onMessage({ type: 'error', error: 'Ошибка обработки сообщения' });
+        }
+      }
     };
 
-    this.ws.onclose = (event) => {
-      this.closeHandlers.forEach(handler => handler(event));
+    this.socket.onerror = (error) => {
+      this.isConnected = false;
+      if (this.onError) {
+        this.onError(error);
+      }
+    };
+
+    this.socket.onclose = () => {
+      this.isConnected = false;
+      if (this.onClose) {
+        this.onClose();
+      }
     };
   }
 
-  onMessage(handler) {
-    this.messageHandlers.add(handler);
-    return () => this.messageHandlers.delete(handler);
-  }
-
-  onError(handler) {
-    this.errorHandlers.add(handler);
-    return () => this.errorHandlers.delete(handler);
-  }
-
-  onClose(handler) {
-    this.closeHandlers.add(handler);
-    return () => this.closeHandlers.delete(handler);
+  connectToTask() {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'connect',
+        task_id: this.taskId
+      };
+      this.socket.send(JSON.stringify(message));
+    }
   }
 
   send(command) {
-    if (this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ command }));
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      const message = {
+        type: 'command',
+        command: command
+      };
+      this.socket.send(JSON.stringify(message));
+    }
+  }
+
+  disconnect() {
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+      this.isConnected = false;
     }
   }
 
   close() {
-    if (this.ws.readyState === WebSocket.OPEN) {
-      this.ws.close();
-    }
+    this.disconnect();
   }
 }
 
-export default TerminalWebSocket; 
+export const getTerminalUrl = async () => {
+  const response = await axiosInstance.get('/terminal/url/');
+  return response.data.url;
+}; 

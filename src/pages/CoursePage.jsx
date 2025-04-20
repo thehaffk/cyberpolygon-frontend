@@ -1,32 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getCourseBySlug, getCourseProgress } from '../api/courses';
-import { getTasks } from '../api/tasks';
-import ReactMarkdown from 'react-markdown';
+import { getCourseBySlug } from '../api/courses';
+import {
+  Container,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Button,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 
 const CoursePage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [course, setCourse] = useState(null);
-  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeLesson, setActiveLesson] = useState(0);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const loadCourse = async () => {
       try {
         setLoading(true);
-        const courseData = await getCourseBySlug(slug);
-        setCourse(courseData);
-        
-        // Загружаем задачи курса
-        const tasksData = await getTasks();
-        const courseTasks = tasksData.filter(task => task.course === courseData.id);
-        setTasks(courseTasks);
+        const data = await getCourseBySlug(slug);
+        setCourse(data);
       } catch (err) {
-        console.error('Error loading course:', err);
-        setError('Не удалось загрузить курс');
+        setError(err.message || 'Ошибка при загрузке курса');
       } finally {
         setLoading(false);
       }
@@ -36,59 +37,64 @@ const CoursePage = () => {
   }, [slug]);
 
   if (loading) {
-    return <div className="loading">Загрузка курса...</div>;
+    return (
+      <Container sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
   }
 
   if (error) {
-    return <div className="error">{error}</div>;
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
   }
 
   if (!course) {
-    return <div className="error">Курс не найден</div>;
+    return (
+      <Container sx={{ mt: 4 }}>
+        <Alert severity="warning">Курс не найден</Alert>
+      </Container>
+    );
   }
 
-  const handleTaskClick = (taskId) => {
-    navigate(`/tasks/${taskId}`);
-  };
-
-  // Получаем медиа-файл курса или используем заглушку
-  const courseImage = course.media && course.media.length > 0 
-    ? `http://localhost:8000${course.media[0].url}` 
-    : 'https://via.placeholder.com/200x200';
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h1 className="text-2xl font-bold mb-4">{course.title}</h1>
-        <p className="text-gray-600 mb-4">{course.description}</p>
-        <div className="flex items-center text-sm text-gray-500">
-          <span>Уроков: {course.lessons_count}</span>
-          <span className="mx-2">•</span>
-          <span>Задач: {tasks.length}</span>
-        </div>
-      </div>
+    <Container sx={{ mt: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        {course.title}
+      </Typography>
+      
+      <Box sx={{ my: 4 }}>
+        <Typography variant="body1" paragraph>
+          {course.description}
+        </Typography>
+      </Box>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tasks.map(task => (
-          <div 
-            key={task.id}
-            onClick={() => handleTaskClick(task.id)}
-            className="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-          >
-            <h2 className="text-xl font-semibold mb-2">{task.title}</h2>
-            <p className="text-gray-600 mb-4">{task.description}</p>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-500">
-                {task.is_completed ? '✅ Выполнено' : '❌ Не выполнено'}
-              </span>
-              <span className="text-sm font-medium text-blue-600">
-                {task.points} очков
-              </span>
-            </div>
-          </div>
+      <Grid container spacing={3}>
+        {course.lessons?.map((lesson) => (
+          <Grid item xs={12} key={lesson.id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  {lesson.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" paragraph>
+                  {lesson.description}
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  onClick={() => navigate(`/courses/${slug}/lessons/${lesson.slug}`)}
+                >
+                  Начать урок
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Container>
   );
 };
 

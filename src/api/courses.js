@@ -2,8 +2,23 @@ import axiosInstance from './axiosInstance';
 
 const COURSES_URL = '/cyberpolygon/v1/courses';
 
-export const getCourses = async (filters = {}) => {
-  const response = await axiosInstance.get(COURSES_URL, { params: filters });
+export const getCourses = async () => {
+  const response = await axiosInstance.get('/courses/');
+  return response.data;
+};
+
+export const getCourseById = async (id) => {
+  const response = await axiosInstance.get(`/courses/${id}/`);
+  return response.data;
+};
+
+export const getLessons = async (courseId) => {
+  const response = await axiosInstance.get(`/courses/${courseId}/lessons/`);
+  return response.data;
+};
+
+export const getLessonById = async (courseId, lessonId) => {
+  const response = await axiosInstance.get(`/courses/${courseId}/lessons/${lessonId}/`);
   return response.data;
 };
 
