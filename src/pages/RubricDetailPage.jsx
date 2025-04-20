@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import rubricsApi from '../api/rubrics';
 import articlesApi from '../api/articles';
+import { useNotify } from '../contexts/NotificationContext';
 
 const RubricDetailPage = () => {
   const { name } = useParams();
@@ -24,6 +25,7 @@ const RubricDetailPage = () => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const notify = useNotify();
 
   useEffect(() => {
     const fetchRubricAndArticles = async () => {
@@ -36,16 +38,21 @@ const RubricDetailPage = () => {
         // Получаем статьи по данной рубрике
         const articlesData = await articlesApi.getArticlesByRubric(name);
         setArticles(articlesData);
+        
+        if (articlesData.length === 0) {
+          notify.info('В этой рубрике пока нет статей');
+        }
       } catch (err) {
         console.error('Error loading rubric data:', err);
         setError('Не удалось загрузить информацию о рубрике');
+        notify.error('Рубрика не найдена или произошла ошибка при загрузке');
       } finally {
         setLoading(false);
       }
     };
 
     fetchRubricAndArticles();
-  }, [name]);
+  }, [name, notify]);
 
   if (loading) {
     return (

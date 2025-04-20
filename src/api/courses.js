@@ -3,22 +3,22 @@ import axiosInstance from './axiosInstance';
 const COURSES_URL = '/cyberpolygon/v1/courses';
 
 export const getCourses = async () => {
-  const response = await axiosInstance.get('/courses/');
+  const response = await axiosInstance.get(`${COURSES_URL}/`);
   return response.data;
 };
 
 export const getCourseById = async (id) => {
-  const response = await axiosInstance.get(`/courses/${id}/`);
+  const response = await axiosInstance.get(`${COURSES_URL}/${id}/`);
   return response.data;
 };
 
 export const getLessons = async (courseId) => {
-  const response = await axiosInstance.get(`/courses/${courseId}/lessons/`);
+  const response = await axiosInstance.get(`${COURSES_URL}/${courseId}/lessons/`);
   return response.data;
 };
 
 export const getLessonById = async (courseId, lessonId) => {
-  const response = await axiosInstance.get(`/courses/${courseId}/lessons/${lessonId}/`);
+  const response = await axiosInstance.get(`${COURSES_URL}/${courseId}/lessons/${lessonId}/`);
   return response.data;
 };
 
@@ -45,7 +45,7 @@ export const getCourseProgress = async (courseSlug) => {
 const coursesApi = {
   // Получение списка всех курсов
   list: async (category, page, size) => {
-    let url = '/cyberpolygon/v1/courses/';
+    let url = `${COURSES_URL}/`;
     const params = {};
     
     if (category) params.category = category;
@@ -58,13 +58,13 @@ const coursesApi = {
   
   // Получение детальной информации о курсе по slug
   get: async (slug) => {
-    const response = await axiosInstance.get(`/cyberpolygon/v1/courses/${slug}/`);
+    const response = await axiosInstance.get(`${COURSES_URL}/${slug}/`);
     return response.data;
   },
   
   // Создание нового курса (требуются права)
   create: async (courseData) => {
-    const response = await axiosInstance.post('/cyberpolygon/v1/courses/', courseData);
+    const response = await axiosInstance.post(`${COURSES_URL}/`, courseData);
     return response.data;
   }
 };

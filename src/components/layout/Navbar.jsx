@@ -37,7 +37,7 @@ import authApi from '../../api/auth';
 const Navbar = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector(state => state.auth);
+  const { user } = useSelector(state => state.user || { user: null });
   const isAuthenticated = authApi.isAuthenticated();
   
   const [anchorElUser, setAnchorElUser] = useState(null);

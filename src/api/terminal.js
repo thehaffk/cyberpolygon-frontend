@@ -1,90 +1,113 @@
 import axiosInstance from './axiosInstance';
+import { API } from '../config/env';
 
+/**
+ * Get terminal WebSocket URL for the specified task
+ * @param {number} taskId - Task ID
+ * @returns {Promise<string>} WebSocket URL
+ */
+export const getTerminalUrl = async (taskId) => {
+  const response = await axiosInstance.get(`/cyberpolygon/v1/tasks/${taskId}/terminal/`);
+  return `${API.WS_URL}/cyberpolygon/v1/tasks/${taskId}/terminal/ws/`;
+};
+
+/**
+ * Class for terminal WebSocket communication
+ */
 export class TerminalWebSocket {
-  constructor(taskId) {
-    this.taskId = taskId;
+  /**
+   * @param {string} url - WebSocket URL
+   * @param {Function} onMessage - Message handler
+   * @param {Function} onError - Error handler
+   * @param {Function} onClose - Close handler
+   * @param {Function} onOpen - Open handler
+   */
+  constructor(url, onMessage, onError, onClose, onOpen) {
+    this.url = url;
+    this.onMessageCallback = onMessage;
+    this.onErrorCallback = onError;
+    this.onCloseCallback = onClose;
+    this.onOpenCallback = onOpen;
     this.socket = null;
-    this.onMessage = null;
-    this.onError = null;
-    this.onClose = null;
-    this.isConnected = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 3;
+    this.reconnectTimeout = 2000; // 2 seconds initial timeout
   }
 
+  /**
+   * Connect to the WebSocket
+   */
   connect() {
-    if (this.socket) {
-      this.disconnect();
+    if (this.socket && this.socket.readyState !== WebSocket.CLOSED) {
+      console.log('WebSocket already connected');
+      return;
     }
 
-    const token = localStorage.getItem('token');
-    const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-    this.socket = new WebSocket(`${baseUrl}/ws/ssh/?token=${token}`);
+    console.log(`Connecting to ${this.url}`);
+    this.socket = new WebSocket(this.url);
 
-    this.socket.onopen = () => {
-      this.isConnected = true;
-      this.connectToTask();
+    this.socket.onopen = (event) => {
+      console.log('WebSocket connected');
+      this.reconnectAttempts = 0;
+      if (this.onOpenCallback) this.onOpenCallback(event);
     };
 
     this.socket.onmessage = (event) => {
-      if (this.onMessage) {
-        try {
-          const data = JSON.parse(event.data);
-          this.onMessage(data);
-        } catch (error) {
-          console.error('Error parsing message:', error);
-          this.onMessage({ type: 'error', error: 'Ошибка обработки сообщения' });
-        }
-      }
+      if (this.onMessageCallback) this.onMessageCallback(event);
     };
 
     this.socket.onerror = (error) => {
-      this.isConnected = false;
-      if (this.onError) {
-        this.onError(error);
-      }
+      console.error('WebSocket error:', error);
+      if (this.onErrorCallback) this.onErrorCallback(error);
     };
 
-    this.socket.onclose = () => {
-      this.isConnected = false;
-      if (this.onClose) {
-        this.onClose();
+    this.socket.onclose = (event) => {
+      console.log('WebSocket closed:', event.code, event.reason);
+      
+      if (this.onCloseCallback) this.onCloseCallback(event);
+      
+      // Don't reconnect if closed normally
+      if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnect();
       }
     };
   }
 
-  connectToTask() {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      const message = {
-        type: 'connect',
-        task_id: this.taskId
-      };
-      this.socket.send(JSON.stringify(message));
-    }
+  /**
+   * Reconnect to the WebSocket
+   */
+  reconnect() {
+    this.reconnectAttempts += 1;
+    const timeout = this.reconnectTimeout * Math.pow(2, this.reconnectAttempts - 1);
+    
+    console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${timeout}ms`);
+    
+    setTimeout(() => {
+      console.log('Reconnecting...');
+      this.connect();
+    }, timeout);
   }
 
-  send(command) {
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      const message = {
-        type: 'command',
-        command: command
-      };
-      this.socket.send(JSON.stringify(message));
+  /**
+   * Send data through the WebSocket
+   * @param {*} data - Data to send
+   */
+  send(data) {
+    if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+      console.error('Cannot send data, WebSocket is not open');
+      return;
     }
+
+    this.socket.send(data);
   }
 
-  disconnect() {
+  /**
+   * Close the WebSocket connection
+   */
+  close() {
     if (this.socket) {
       this.socket.close();
       this.socket = null;
-      this.isConnected = false;
     }
   }
-
-  close() {
-    this.disconnect();
-  }
-}
-
-export const getTerminalUrl = async () => {
-  const response = await axiosInstance.get('/terminal/url/');
-  return response.data.url;
-}; 
+} 

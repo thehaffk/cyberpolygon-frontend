@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { TerminalWebSocket } from '../api';
+import { TerminalWebSocket, getTerminalUrl } from '../api/terminal';
 import { getTasks } from '../api/tasks';
 
 const TerminalPage = () => {
@@ -12,6 +12,8 @@ const TerminalPage = () => {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const terminalRef = useRef(null);
   const wsRef = useRef(null);
+  const [connected, setConnected] = useState(false);
+  const [terminal, setTerminal] = useState(null);
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -30,48 +32,71 @@ const TerminalPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedTask) {
-      setConnectionStatus('disconnected');
-      return;
-    }
+    if (selectedTask) {
+      let socket = null;
 
-    try {
-      wsRef.current = new TerminalWebSocket(selectedTask.id);
-      setConnectionStatus('connecting');
-
-      wsRef.current.onMessage = (data) => {
-        if (data.type === 'output') {
-          setOutput(prev => [...prev, { type: 'output', content: data.output }]);
-        } else if (data.type === 'error') {
-          setError(data.error);
-          setConnectionStatus('error');
+      const connectToTerminal = async () => {
+        try {
+          setLoading(true);
+          setError(null);
+          
+          // Get terminal URL for the selected task
+          const wsUrl = await getTerminalUrl(selectedTask);
+          
+          // Create and connect WebSocket
+          socket = new TerminalWebSocket(
+            wsUrl,
+            // onMessage
+            (event) => {
+              let message;
+              try {
+                message = JSON.parse(event.data);
+              } catch (e) {
+                // If not JSON, use raw data
+                message = { type: 'output', data: event.data };
+              }
+              
+              if (message.type === 'output') {
+                // Add output to terminal
+                setOutput(prev => [...prev, { type: 'output', data: message.data }]);
+              } else if (message.type === 'error') {
+                setError(message.data || 'Ошибка соединения с терминалом');
+              }
+            },
+            // onError
+            (error) => {
+              console.error('Terminal WebSocket error:', error);
+              setConnected(false);
+              setError('Ошибка соединения с терминалом');
+            },
+            // onClose
+            () => {
+              setConnected(false);
+            },
+            // onOpen
+            () => {
+              setConnected(true);
+              setLoading(false);
+            }
+          );
+          
+          socket.connect();
+          setTerminal(socket);
+        } catch (err) {
+          console.error('Terminal connection error:', err);
+          setError('Не удалось подключиться к терминалу');
+          setLoading(false);
         }
       };
 
-      wsRef.current.onError = (error) => {
-        console.error('WebSocket error:', error);
-        setError('Ошибка подключения к терминалу');
-        setConnectionStatus('error');
+      connectToTerminal();
+
+      return () => {
+        if (socket) {
+          socket.close();
+        }
       };
-
-      wsRef.current.onClose = () => {
-        setConnectionStatus('disconnected');
-      };
-
-      wsRef.current.connect();
-      setConnectionStatus('connected');
-
-    } catch (err) {
-      console.error('Failed to connect:', err);
-      setError(err.message);
-      setConnectionStatus('error');
     }
-
-    return () => {
-      if (wsRef.current) {
-        wsRef.current.disconnect();
-      }
-    };
   }, [selectedTask]);
 
   const handleTaskSelect = (task) => {
@@ -81,10 +106,19 @@ const TerminalPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!command.trim() || connectionStatus !== 'connected') return;
-
-    wsRef.current.send(command);
-    setOutput(prev => [...prev, { type: 'command', content: command }]);
+    
+    if (!command.trim() || !terminal || !connected) return;
+    
+    // Add command to output with $ prefix
+    setOutput(prev => [...prev, { type: 'command', data: `$ ${command}` }]);
+    
+    // Send command to WebSocket
+    terminal.send(JSON.stringify({
+      type: 'command',
+      command: command
+    }));
+    
+    // Clear command input
     setCommand('');
   };
 
@@ -129,7 +163,7 @@ const TerminalPage = () => {
             {output.map((line, index) => (
               <div key={index} className={`line ${line.type}`}>
                 {line.type === 'command' && '$ '}
-                {line.content}
+                {line.data}
               </div>
             ))}
           </div>

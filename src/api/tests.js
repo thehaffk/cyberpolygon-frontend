@@ -1,11 +1,13 @@
 import axiosInstance from './axiosInstance';
 import { mockService, shouldUseMocks } from '../services/mockService';
 
+const TESTS_URL = '/cyberpolygon/v1/tests';
+
 export const getTests = async () => {
   if (shouldUseMocks()) {
     return mockService.tests.getAll();
   }
-  const response = await axiosInstance.get('/v1/tests/');
+  const response = await axiosInstance.get(`${TESTS_URL}/`);
   return response.data;
 };
 
@@ -13,7 +15,7 @@ export const getTestById = async (id) => {
   if (shouldUseMocks()) {
     return mockService.tests.getById(Number(id));
   }
-  const response = await axiosInstance.get(`/v1/tests/${id}/`);
+  const response = await axiosInstance.get(`${TESTS_URL}/${id}/`);
   return response.data;
 };
 
@@ -28,7 +30,7 @@ export const startTest = async (testId) => {
       ] 
     };
   }
-  const response = await axiosInstance.post(`/v1/tests/${testId}/start/`);
+  const response = await axiosInstance.post(`${TESTS_URL}/${testId}/start/`);
   return response.data;
 };
 
@@ -42,7 +44,7 @@ export const submitTest = async (id, answers) => {
       message: "Тест успешно пройден!"
     };
   }
-  const response = await axiosInstance.post(`/v1/tests/check/`, { 
+  const response = await axiosInstance.post(`${TESTS_URL}/check/`, { 
     test_id: id,
     answers: answers 
   });
@@ -61,6 +63,6 @@ export const getTestResults = async (testId) => {
       ]
     };
   }
-  const response = await axiosInstance.get(`/v1/tests/${testId}/results/`);
+  const response = await axiosInstance.get(`${TESTS_URL}/${testId}/results/`);
   return response.data;
 }; 

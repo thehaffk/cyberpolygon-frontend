@@ -9,21 +9,21 @@ import {
   Paper,
   Alert,
   CircularProgress,
-  Divider,
-  Tooltip,
-  IconButton,
   Stack,
 } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { SiYandexcloud } from 'react-icons/si';
-import { getOAuthUrl } from '../api/auth';
+import authApi, { getOAuthUrl } from '../api/auth';
+import { useNotify } from '../contexts/NotificationContext';
+import { setUser } from '../redux/userSlice';
 
 const AuthPage = () => {
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const notify = useNotify();
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [activeProvider, setActiveProvider] = useState('');
 
@@ -34,9 +34,14 @@ const AuthPage = () => {
 
     try {
       const authUrl = await getOAuthUrl(provider);
-      window.location.href = authUrl;
+      // Подготавливаем данные для state, чтобы идентифицировать провайдера при возврате
+      const state = JSON.stringify({ provider });
+      // Добавляем state к URL
+      const authUrlWithState = new URL(authUrl);
+      authUrlWithState.searchParams.set('state', state);
+      
+      window.location.href = authUrlWithState.toString();
     } catch (err) {
-      console.error(`OAuth error with ${provider}:`, err);
       setError(
         err.response?.data?.detail || 
         err.message || 

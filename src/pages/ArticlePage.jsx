@@ -14,12 +14,14 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import articlesApi from '../api/articles';
+import { useNotify } from '../contexts/NotificationContext';
 
 const ArticlePage = () => {
   const { id } = useParams();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const notify = useNotify();
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -30,13 +32,14 @@ const ArticlePage = () => {
       } catch (err) {
         console.error('Error loading article:', err);
         setError('Не удалось загрузить статью');
+        notify.error('Статья не найдена или произошла ошибка при загрузке');
       } finally {
         setLoading(false);
       }
     };
 
     fetchArticle();
-  }, [id]);
+  }, [id, notify]);
 
   if (loading) {
     return (

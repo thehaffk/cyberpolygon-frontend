@@ -8,11 +8,10 @@ export const login = async (email, password) => {
     return mockService.auth.login(email, password);
   }
   
-  const response = await axiosInstance.post('/token/', { email, password });
+  const response = await axiosInstance.post(`${AUTH_URL}/login/`, { username: email, password });
   
-  if (response.data.access) {
-    localStorage.setItem('access_token', response.data.access);
-    localStorage.setItem('refresh_token', response.data.refresh);
+  if (response.data.token) {
+    localStorage.setItem('access_token', response.data.token);
   }
   
   return response.data;
@@ -23,11 +22,10 @@ export const register = async (username, email, password) => {
     return mockService.auth.register(username, email, password);
   }
   
-  const response = await axiosInstance.post('/auth/signup/', { username, email, password });
+  const response = await axiosInstance.post(`${AUTH_URL}/signup/`, { username, email, password });
   
-  if (response.data.access) {
-    localStorage.setItem('access_token', response.data.access);
-    localStorage.setItem('refresh_token', response.data.refresh);
+  if (response.data.token) {
+    localStorage.setItem('access_token', response.data.token);
   }
   
   return response.data;
@@ -39,11 +37,10 @@ export const logout = async () => {
   }
   
   try {
-    const response = await axiosInstance.post('/auth/logout/');
+    const response = await axiosInstance.post(`${AUTH_URL}/logout/`);
     return response.data;
   } finally {
     localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
   }
 };
 
@@ -52,7 +49,7 @@ export const getCurrentUser = async () => {
     return mockService.auth.getCurrentUser();
   }
   
-  const response = await axiosInstance.get('/auth/user/');
+  const response = await axiosInstance.get('/cyberpolygon/v1/profile/');
   return response.data;
 };
 
@@ -61,7 +58,7 @@ export const updateProfile = async (data) => {
     return mockService.auth.updateProfile(data);
   }
   
-  const response = await axiosInstance.patch('/auth/me/', data);
+  const response = await axiosInstance.patch('/cyberpolygon/v1/profile/', data);
   return response.data;
 };
 
@@ -87,7 +84,7 @@ export const getOAuthUrl = async (provider) => {
     return mockService.auth.getOAuthUrl(provider);
   }
   
-  const response = await axiosInstance.get(`/auth/oauth/${provider}/`);
+  const response = await axiosInstance.get(`${AUTH_URL}/oauth/${provider}/`);
   return response.data.authorization_url;
 };
 
@@ -102,14 +99,13 @@ export const handleOAuthCallback = async (provider, code, state) => {
     return mockService.auth.handleOAuthCallback();
   }
   
-  const response = await axiosInstance.post(`/auth/oauth/${provider}/callback/`, {
+  const response = await axiosInstance.post(`${AUTH_URL}/oauth/${provider}/callback/`, {
     code,
     state
   });
   
-  if (response.data && response.data.access) {
-    localStorage.setItem('access_token', response.data.access);
-    localStorage.setItem('refresh_token', response.data.refresh);
+  if (response.data && response.data.token) {
+    localStorage.setItem('access_token', response.data.token);
   }
   
   return response.data;
